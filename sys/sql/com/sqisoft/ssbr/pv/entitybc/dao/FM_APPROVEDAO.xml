@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<statements>
+
+	<statement name="selectFmApprove">
+    	SELECT * from fm_approve where file_name_svr = ?
+	</statement>
+	
+	<statement name="updateFmApprovePrivStat">
+        UPDATE fm_approve set priv_state = ? , aprv_cause= ? , priv_detail = ? where file_name_svr = ?
+    </statement>  
+	
+</statements>    

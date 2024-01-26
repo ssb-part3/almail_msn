@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<statements>
+	<statement name="retrieveLogTransInfo">
+    	SELECT 
+		log_date,log_time,db_div,svc_no,svc_div,svc_direct,log_div,process_name,app_answer,cmd,url,from_ip,to_ip,tm_tot,tm_send,tm_recv,tm_end,send_cnt,send_byte,recv_cnt,recv_byte,msg 
+		FROM log_trans_info 
+		WHERE msg = ?
+	</statement>
+	
+</statements>    

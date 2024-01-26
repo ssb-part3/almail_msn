@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<statements>
+    <statement name="insertMailApprove">
+        INSERT INTO ml_approve (file_name_pc,file_name_svr,file_size,file_course,
+        file_user ,file_date ,file_cause, aprv_id , aprv_user,aprv_rank, disp_date,
+        mail_id , mail_title , mail_attach_cnt,virus_state,virus_flag
+        ) VALUES ( ?, ?, ?, ?, ?, now(), ?, ?, ?, ? , date_add( now(), interval 15 day),
+        ? ,? ,? ,'1','1')
+    </statement>
+
+    <statement name="retrieveAprvSendMailList">
+        select * from ml_approve where send_state=0 
+        and virus_flag=1 and virus_state=1 and del_flag=0 and aprv_state=1
+    </statement>
+</statements>    

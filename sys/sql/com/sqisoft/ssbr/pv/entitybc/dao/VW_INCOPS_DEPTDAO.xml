@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<statements>
+	<statement name="retrieveSscdDeptList">
+    	SELECT DEPTCODE as DEPT_ID,HIGHDEPTCODE as PAR_ID,DEPTNAME as DEPT_NAME,DISPLAY_ORDER ,DEPTH1,DEPTH2,SDEPTCODE,SHIGHDEPTCODE
+    	from vw_incops_dept
+	</statement>
+</statements>

@@ -1,0 +1,15 @@
+#!/bin/sh
+
+PROJECT_HOME=/home/almail/almv1.0
+cd ${PROJECT_HOME}
+
+if [ -f alm-1.0-src.tar.gz ]
+then
+   rm -f alm-1.0-src.tar.gz
+fi
+
+tar cvfz alm-1.0-src.tar.gz --exclude=.svn * --exclude=src
+
+cd ${PROJECT_HOME}/rpm
+
+rpmbuild -ba almail.spec

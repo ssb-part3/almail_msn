@@ -1,0 +1,55 @@
+#!/bin/sh
+#
+# description: The almail_msn : v1.0
+# processname: almail_msn
+# 
+# Comments to support chkconfig on RedHat Linux
+# chkconfig: 345 99 01
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+today=`/bin/date '+%y%m%d%H%M%S'`;export today
+logname="/tmp/almail_msn.init.$today";export logname
+RUN_PATH="/www/alm_msn" 
+
+/bin/echo "=====> START : Alim Mail Running Start [$1]" >> $logname
+/bin/date  >> $logname
+
+start() {
+	echo "===>run almail_start.sh" >> $logname
+	$RUN_PATH/almail_start.sh
+}
+stop() {
+	echo "===>stop almail_stop.sh" >> $logname
+	$RUN_PATH/almail_stop.sh
+}
+status() {
+	echo "===>stop almail_status.sh" >> $logname
+	$RUN_PATH/almail_status.sh
+}
+
+case "$1" in
+       start)
+                start
+                ;;
+       stop)
+                stop
+                ;;
+       status)
+                status
+                ;;
+       restart)
+                stop
+                sleep 3
+                start
+                ;;
+       *)
+                echo "Usage: $0 {start|stop|status|restart}"  2>&1 >> $logname
+                exit 1
+                ;;
+esac
+
+/bin/date  >> $logname
+/bin/echo "=====> END   : Alim Mail Running End [$1] " >> $logname
+exit 0

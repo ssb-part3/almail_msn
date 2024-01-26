@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<statements>
+
+	<statement name="selectPrivatePatternInList">
+    	SELECT * FROM private_pattern WHERE pt_code 
+	</statement>
+	
+</statements>    

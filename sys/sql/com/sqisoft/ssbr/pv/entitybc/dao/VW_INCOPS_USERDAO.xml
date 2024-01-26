@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<statements>
+	<statement name="retrieveSscdUserList">
+    	SELECT ID,HNAME,JIKGBNM,LOCATECODE,EMPTYPE,COMPANYCODE,STATUS,DEPTCODE,GRADE_NAME,JOB_NAME,
+    	RETIRED_DATE,FIRST_NAME,SUR_NAME ,
+    	(SELECT DEPTNAME FROM vw_incops_dept where vw_incops_dept.DEPTCODE = vw_incops_user.DEPTCODE)  DEPTNAME ,
+    	(SELECT SDEPTCODE FROM vw_incops_dept where vw_incops_dept.DEPTCODE = vw_incops_user.DEPTCODE)  SDEPTCODE 
+    	 FROM vw_incops_user
+	</statement>
+</statements>

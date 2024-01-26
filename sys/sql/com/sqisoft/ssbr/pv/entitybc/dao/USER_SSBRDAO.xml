@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<statements>
+	<statement name="retrieveUserSsbrFromSingleID">
+    	select user_id , single_id from user_ssbr where single_id in ( :CONDITION: ) 
+	</statement>
+    <statement name="retrieveUserSsbrFromUserID">
+        select user_id , single_id from user_ssbr where user_id in ( :CONDITION: ) 
+    </statement>
+    <statement name="retrieveUserSsbrFromEmail">
+        select user_id , user_name from user_ssbr where user_mail = ? 
+    </statement>
+    <statement name="retrieveAprvUserSsbrFromEmail">
+       SELECT b.* FROM user_ssbr a , post_user b 
+       WHERE a.user_dept = b.dept_id and a.user_mail= ? limit 0 ,1 ;
+    </statement>
+</statements>

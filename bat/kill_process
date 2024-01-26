@@ -1,0 +1,43 @@
+#!/bin/sh
+# =================================================
+# name     : kill_process
+# desc.    : 파라메터와 정확히 일치하는 프로세스를 정지한다.
+# process  :
+# date     : 2012.9.12 Modified by HA
+# original : ssbr의 kill_process 을 수정
+# =================================================
+#
+#
+if [ $# -lt 1 ]
+then
+    echo "Usage: $0 prog_pattern <$#>"
+exit 0
+fi
+
+len=`echo $1 | wc -c`
+if [ $len -lt 9 ]
+then
+    echo "Error: Length of Parameter($1) < 8"
+    exit 0
+fi
+
+pidlist=`ps -eo pid,cmd | grep "$1" | grep -v "grep $1" | grep -v "$0 $1" | awk '{print $1}'`
+case "$pidlist" in
+        "")
+                exit 0
+                ;;
+esac
+
+for pid in $pidlist 
+{
+        case "$pid" in
+                "$$")
+                        ;;
+                *)
+                        echo "kill -TERM $pid ($1)"
+                       /bin/kill -TERM  "$pid"
+                        ;;
+        esac
+}
+
+exit 0
