@@ -10,9 +10,11 @@ import com.sqisoft.ssbr.al.util.BizUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 //import java.io.UnsupportedEncodingException;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 import jp.epiontech.frame.conf.Configuration;
 import jp.epiontech.frame.conf.ConfigurationException;
@@ -21,6 +23,7 @@ import jp.epiontech.frame.mail.SendMail;
 import jp.epiontech.frame.mail.SendMailImpl;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.http.HttpEntity;
@@ -72,9 +75,10 @@ public class Almail_Engine {
 	public static final int SOCKET_NOT_CLOSE = -4;
 	public static final int SOCKET_NOT_CLOSE2 = -5;
 	public static final int SOCKET_NOT_CLOSE3 = -6;
-//	static {
-//		System.loadLibrary("NotifyMailRecv");
-//	}
+	
+	static {
+		System.loadLibrary("NotifyMailRecv");
+	}
 
 	/**
 	 * Constructors
@@ -533,7 +537,6 @@ public class Almail_Engine {
 
 	// MsnSend for KB Messenger (국민은행 메신저 알림)
 	public void MsnSendForKbstar(String dir) throws Exception {
-		System.err.println("dir ::: " + dir);
 		File[] files = BizUtil.subDirList(dir);
 
 		for (int i = 0; i < files.length; i++) {
@@ -586,14 +589,24 @@ public class Almail_Engine {
 				nvps.add(new BasicNameValuePair("BODY", bodyBuf.toString()));
 				
 				
-
+				SimpleDateFormat date = new SimpleDateFormat("yyyyMMddHHmmssSSS");
+				String timeStamp = date.format(new Date());
+//				System.out.println("Current Time Stamp: " + timeStamp);
+//				String timeStampUp = timeStamp.substring(0, timeStamp.length()-3); // 
+//				String aa = timeStamp.substring(0, 8); //yyyyMMdd
+//				String bb = timeStamp.substring(8, timeStamp.length()-3); //HHmmss
+//				String cc = timeStamp.substring(timeStamp.length()-3, timeStamp.length()); //SSS
+				
 				Map<String, String> hp = new HashMap<String, String>();
 		        hp.put("Content-type", "application/json");
 		        hp.put("Authorization", "test");
-		        hp.put("X-KB-GUID", "KB0MFCB012fv20200305181254309003001");
+		        hp.put("X-KB-GUID", "KB0PSJC017900"+ timeStamp+ThreadLocalRandom.current().nextInt(100000, 1000000));
 		        hp.put("X-KB-push-Type", "1");
 		        for(String key : hp.keySet()){
 		            httpPost.setHeader(key, hp.get(key));
+		            if(key.equals("X-KB-GUID")) {
+		            	logger.debug("X-KB-GUID >> " + hp.get(key));
+		            }
 		        }
 		
 		        httpPost.setEntity(new UrlEncodedFormEntity(nvps, "UTF-8"));
@@ -617,11 +630,11 @@ public class Almail_Engine {
 					
 					EntityUtils.consume(entity);
 					// 무조건 삭제 로 변경(2015.12.09)
-//					file.delete();
+					file.delete();
 					// msn file delete
-//					if( resMsgFinal.trim().equals("OK") ) {
-//						file.delete();
-//					}
+					if( resMsgFinal.trim().equals("OK") ) {
+						file.delete();
+					}
 				} finally {
 					response.close();
 				}
@@ -649,7 +662,6 @@ public class Almail_Engine {
 			log_path = "/data/log";
 
 		try {
-			System.err.println("log_path::: "+  log_path);
 			java.net.InetAddress localMachine = java.net.InetAddress
 					.getLocalHost();
 			hostname = localMachine.getHostName();
