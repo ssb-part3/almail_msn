@@ -538,7 +538,7 @@ public class Almail_Engine {
 	// MsnSend for KB Messenger (국민은행 메신저 알림)
 	public void MsnSendForKbstar(String dir) throws Exception {
 		File[] files = BizUtil.subDirList(dir);
-
+		
 		for (int i = 0; i < files.length; i++) {
 			File file = files[i];
 			StringBuffer bodyBuf = new StringBuffer();
@@ -549,8 +549,13 @@ public class Almail_Engine {
 			String resMsg = "";
 			String resMsgNoHtml = "";
 			String resMsgFinal = "";
-
+			logger.debug("files Count Check : " + files.length); 
+			if(!file.exists()) {
+				logger.debug("file Check : " + file.getName() +" Not exists.");
+				return;
+			}
 			String[] msn = BizUtil.readLine(file);
+			
 			
 			logger.debug("file name : " + file.getName());
 
@@ -575,7 +580,7 @@ public class Almail_Engine {
 				}
 			}
 
-			logger.debug(bodyBuf.toString());
+			logger.debug("bodyBuf = " + bodyBuf.toString());
 
 			//
 			CloseableHttpClient httpclient = HttpClients.createDefault();
@@ -591,12 +596,7 @@ public class Almail_Engine {
 				
 				SimpleDateFormat date = new SimpleDateFormat("yyyyMMddHHmmssSSS");
 				String timeStamp = date.format(new Date());
-//				System.out.println("Current Time Stamp: " + timeStamp);
-//				String timeStampUp = timeStamp.substring(0, timeStamp.length()-3); // 
-//				String aa = timeStamp.substring(0, 8); //yyyyMMdd
-//				String bb = timeStamp.substring(8, timeStamp.length()-3); //HHmmss
-//				String cc = timeStamp.substring(timeStamp.length()-3, timeStamp.length()); //SSS
-				
+
 				Map<String, String> hp = new HashMap<String, String>();
 		        hp.put("Content-type", "application/json");
 		        hp.put("Authorization", "test");
