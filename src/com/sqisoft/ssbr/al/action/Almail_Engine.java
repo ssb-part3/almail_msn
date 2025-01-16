@@ -45,8 +45,12 @@ public class Almail_Engine {
 
 	public static String log_dir = "/data/log";
 
-	public static String file_dir = "/data/xferFile";
+	public static String file_dir = "/data/xferFile/msn";	
+	public static String fail_dir = "/data/xferFile/msn_fail"; // 알림 전송 실패 시 msn 파일 이동 경로
 
+	public static int limitDate = 0; 
+	public static int limitTry = 0;
+	
 	public static String mail = "mail";
 
 	public static String type = "msn";
@@ -100,6 +104,18 @@ public class Almail_Engine {
 			file_dir = conf.getString("frame.alim.file.dir");
 			logger.debug("AED0004 Engine Configuration get frame.xferFile.dir : "
 					+ file_dir);
+			
+			fail_dir = conf.getString("frame.alim.fail.dir");
+			logger.debug("AED0004 Engine Configuration get frame.alim.fail.dir : "
+					+ fail_dir);
+			
+			limitTry = conf.getInt("frame.alim.limit.try");
+			logger.debug("AED0004 Engine Configuration get frame.alim.limit.try : "
+					+ limitTry);
+			
+			limitDate = conf.getInt("frame.alim.limit.date");
+			logger.debug("AED0004 Engine Configuration get frame.alim.limit.date : "
+					+ limitDate);
 
 			svr_url = conf.getString("frame.alim.server");
 			logger.debug("AED0004 Engine Configuration get frame.alim.server : "
@@ -115,7 +131,7 @@ public class Almail_Engine {
 			
 			srvCode = conf.getString("frame.alim.srvcode");							
 			logger.debug("AED0004 Engine Configuration get frame.alim.srvcode : "
-					+ msgEnc);
+					+ srvCode);
 
 			// port = conf.getInt("frame.alim.port");
 			// logger.debug(
@@ -193,6 +209,7 @@ public class Almail_Engine {
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.err.println("Exception  generated...");
+			logger.error("AEE0008 Engine_Main Exception : " + e);
 		} finally {
 
 		}
@@ -549,100 +566,136 @@ public class Almail_Engine {
 			String resMsg = "";
 			String resMsgNoHtml = "";
 			String resMsgFinal = "";
-			logger.debug("files Count Check : " + files.length); 
+			
+			logger.info("files Count Check : " + files.length); 
 			if(!file.exists()) {
-				logger.debug("file Check : " + file.getName() +" Not exists.");
+				logger.info("file Check : " + file.getName() +" Not exists.");
 				return;
 			}
-			String[] msn = BizUtil.readLine(file);
 			
 			
-			logger.debug("file name : " + file.getName());
-
-			for (int j = 0; j < msn.length; j++) {
-
-				logger.debug("sms-content : " + msn[j]);
-				if (msn[j].startsWith("Subject:")) {
-					title = msn[j].substring(msn[j].indexOf(": ")+1).trim();
-					logger.debug("title:" + title);
-				} else if (msn[j].startsWith("To: ")) {
-					to = BizUtil.idAbstractString(msn[j].substring(msn[j]
-							.indexOf(":")));
-					logger.debug("|" + to + "|");
-				} else if (msn[j].startsWith("From:")) {
-					from = BizUtil.idAbstractString(msn[j].substring(msn[j]
-							.indexOf(":")));
-					logger.debug("from:|" + from + "|");
-					fromName = msn[j].substring(msn[j].indexOf(": ")+1,msn[j].indexOf("<"));
-					logger.debug("fromName:|" + from + "|");
-				} else {
-					bodyBuf.append(msn[j] + "\n");
-				}
+			// 제한일자 넘어간 알림 파일의 경우 fail 폴더 이동
+			long lastModified = file.lastModified() / 1000;
+			long currentTime = System.currentTimeMillis() / 1000;
+			
+			if( limitDate != 0 && (currentTime - lastModified) >= limitDate * 60 * 60 * 24L) {
+				logger.debug("File moved due to expired date : " + file.getName());
+				BizUtil.moveFile(file, fail_dir);
+				continue;
 			}
+	
 
-			logger.debug("bodyBuf = " + bodyBuf.toString());
+			int nowTry = 1;
+			while (true){
+				try {				
+					String[] msn = BizUtil.readLine(file);
 
-			//
-			CloseableHttpClient httpclient = HttpClients.createDefault();
-			try {
-				HttpPost httpPost = new HttpPost(this.svr_url);
-				List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-				nvps.add(new BasicNameValuePair("SRV_CODE", srvCode));
-				nvps.add(new BasicNameValuePair("RECIPIENT", to));
-				nvps.add(new BasicNameValuePair("SEND", from));
-				nvps.add(new BasicNameValuePair("TITLE", title));
-				nvps.add(new BasicNameValuePair("BODY", bodyBuf.toString()));
-				
-				
-				SimpleDateFormat date = new SimpleDateFormat("yyyyMMddHHmmssSSS");
-				String timeStamp = date.format(new Date());
+					logger.debug("file name : " + file.getName());
 
-				Map<String, String> hp = new HashMap<String, String>();
-		        hp.put("Content-type", "application/json");
-		        hp.put("Authorization", "test");
-		        hp.put("X-KB-GUID", "KB0PSJC017900"+ timeStamp+ThreadLocalRandom.current().nextInt(100000, 1000000));
-		        hp.put("X-KB-push-Type", "1");
-		        for(String key : hp.keySet()){
-		            httpPost.setHeader(key, hp.get(key));
-		            if(key.equals("X-KB-GUID")) {
-		            	logger.debug("X-KB-GUID >> " + hp.get(key));
-		            }
-		        }
-		
-		        httpPost.setEntity(new UrlEncodedFormEntity(nvps, "UTF-8"));
-				logger.debug("HTTP Request Data : " + nvps.toString());
+					for (int j = 0; j < msn.length; j++) {
 
-				CloseableHttpResponse response = httpclient.execute(httpPost);
-
-				try {
-					logger.debug("response.getStatusLine : " + response.getStatusLine());
-
-					HttpEntity entity = response.getEntity();
-
-					resMsg = EntityUtils.toString(entity);
-					logger.debug("resultMsg : " + resMsg);
-					
-					resMsgNoHtml = resMsg.replaceAll("<[^>]*>", "");
-					logger.debug("resultMsgNoHtml : " + resMsgNoHtml);
-					
-					resMsgFinal = resMsgNoHtml.replaceAll("[0-9;]","");
-					logger.debug("resultMsgFinal : " + resMsgFinal);
-					
-					EntityUtils.consume(entity);
-					// 무조건 삭제 로 변경(2015.12.09)
-					file.delete();
-					// msn file delete
-					if( resMsgFinal.trim().equals("OK") ) {
-						file.delete();
+						logger.debug("sms-content : " + msn[j]);
+						if (msn[j].startsWith("Subject:")) {
+							title = msn[j].substring(msn[j].indexOf(": ") + 1).trim();
+							logger.debug("title:" + title);
+						} else if (msn[j].startsWith("To: ")) {
+							to = BizUtil.idAbstractString(msn[j].substring(msn[j].indexOf(":")));
+							logger.debug("|" + to + "|");
+						} else if (msn[j].startsWith("From:")) {
+							from = BizUtil.idAbstractString(msn[j].substring(msn[j].indexOf(":")));
+							logger.debug("from:|" + from + "|");
+							fromName = msn[j].substring(msn[j].indexOf(": ") + 1, msn[j].indexOf("<"));
+							logger.debug("fromName:|" + from + "|");
+						} else {
+							bodyBuf.append(msn[j] + "\n");
+						}
 					}
-				} finally {
-					response.close();
+
+					logger.debug("bodyBuf = " + bodyBuf.toString());
+
+					//
+					CloseableHttpClient httpclient = HttpClients.createDefault();
+					try {
+						HttpPost httpPost = new HttpPost(this.svr_url);
+						List<NameValuePair> nvps = new ArrayList<NameValuePair>();
+						nvps.add(new BasicNameValuePair("SRV_CODE", srvCode));
+						nvps.add(new BasicNameValuePair("RECIPIENT", to));
+						nvps.add(new BasicNameValuePair("SEND", from));
+						nvps.add(new BasicNameValuePair("TITLE", title));
+						nvps.add(new BasicNameValuePair("BODY", bodyBuf.toString()));
+
+						// #2809 해당 일감 패치 미적용이기 때문에 주석처리함.
+						/*
+						SimpleDateFormat date = new SimpleDateFormat("yyyyMMddHHmmssSSS");
+						String timeStamp = date.format(new Date());
+
+						Map<String, String> hp = new HashMap<String, String>();
+						hp.put("Content-type", "application/json");
+						hp.put("Authorization", "test");
+						
+						hp.put("X-KB-GUID",
+								"KB0PSJC017900" + timeStamp + ThreadLocalRandom.current().nextInt(100000, 1000000));
+						hp.put("X-KB-push-Type", "1");
+						for (String key : hp.keySet()) {
+							httpPost.setHeader(key, hp.get(key));
+							if (key.equals("X-KB-GUID")) {
+								logger.debug("X-KB-GUID >> " + hp.get(key));
+							} 
+						}*/
+
+						httpPost.setEntity(new UrlEncodedFormEntity(nvps, "UTF-8"));
+						logger.debug("HTTP Request Data : " + nvps.toString());
+
+						CloseableHttpResponse response = httpclient.execute(httpPost);
+
+						try {
+							logger.debug("response.getStatusLine : " + response.getStatusLine());
+
+							HttpEntity entity = response.getEntity();
+
+							resMsg = EntityUtils.toString(entity);
+							logger.debug("resultMsg : " + resMsg);
+
+							resMsgNoHtml = resMsg.replaceAll("<[^>]*>", "");
+							logger.debug("resultMsgNoHtml : " + resMsgNoHtml);
+
+							resMsgFinal = resMsgNoHtml.replaceAll("[0-9;]", "");
+							logger.debug("resultMsgFinal : " + resMsgFinal);
+
+							EntityUtils.consume(entity);
+							// 무조건 삭제 로 변경(2015.12.09)
+							file.delete();
+							// msn file delete
+							if (resMsgFinal.trim().equals("OK")) {
+								file.delete();
+							}
+							break;
+						} finally {
+							response.close();
+						}
+					} finally {
+						httpclient.close();
+					}	
+				} catch (Exception e) {
+					logger.error(String.format("Msn Send Fail [%d/%d] : %s [%s]", nowTry, limitTry, file.getName(), e));
+						if(nowTry >= limitTry){
+							logger.error("File moved due to limit exceeded : " + file.getName());
+							try{
+								// 메신저 전송 실패 시 파일 이동
+								BizUtil.moveFile(file, fail_dir);
+							}catch(IOException e2){
+								logger.error("Failed to move file : " + e2);
+								file.delete();
+							}
+							break;
+						}
+						nowTry++;
+					}
 				}
-			} finally {
-				httpclient.close();
+				
 			}
 		}
-	}
+	
 
 	
 	/**

@@ -1,6 +1,10 @@
 package com.sqisoft.ssbr.al.util;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -195,6 +199,29 @@ public class BizUtil {
 	    }
 
 	    return result;
+	}
+	
+	public static void moveFile(File orgFile, String targetDir) throws IOException {
+
+		if (orgFile == null || !Files.exists(orgFile.toPath())) {
+			throw new IOException("Source file does not exist");
+		}
+
+		Path targetDirectory = Paths.get(targetDir);
+
+		if (!Files.exists(targetDirectory)) {
+			throw new IOException("Target directory does not exist: " + targetDir);
+		}
+
+		Path targetPath = targetDirectory.resolve(orgFile.getName());
+
+		try {
+			Files.move(orgFile.toPath(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+		} catch (IOException e) {
+			throw new IOException("Error occured while moving file: " + orgFile.getAbsolutePath(), e);
+		}
+		return;
+
 	}
 
 	/**
